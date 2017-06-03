@@ -56,6 +56,8 @@ namespace CQRSlite.Config
             var del = new Func<dynamic, Task>(x =>
             {
                 dynamic handler = _serviceLocator.GetService(executorType);
+                if(handler == null)
+                    throw new InvalidOperationException($"Cannot finds handler: {executorType}");
                 return handler.Handle(x);
             });
 
