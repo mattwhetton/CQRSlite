@@ -27,7 +27,7 @@ namespace CQRSlite.Cache
             _cache.RegisterEvictionCallback(key => _locks.TryRemove(key, out var o));
         }
 
-        public async Task Save<T>(T aggregate, Action<T> onAggregateSaved, int? expectedVersion = null) where T : AggregateRoot
+        public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
             var @lock = _locks.GetOrAdd(aggregate.Id, CreateLock);
             await @lock.WaitAsync();
@@ -37,7 +37,7 @@ namespace CQRSlite.Cache
                 {
                     _cache.Set(aggregate.Id, aggregate);
                 }
-                await _repository.Save(aggregate, onAggregateSaved, expectedVersion);
+                await _repository.Save(aggregate, expectedVersion);
             }
             catch (Exception)
             {

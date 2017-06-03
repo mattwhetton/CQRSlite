@@ -59,8 +59,13 @@ namespace CQRSlite.Domain
 
         public async Task Commit()
         {
-            await Task.WhenAll(_trackedAggregates.Values.Select(x => _repository.Save(x.Aggregate, agg => RemoveTrackedAggregate(agg), x.Version)));
-            //_trackedAggregates.Clear();
+            var committableAggregates = _trackedAggregates.Values.ToList();
+            await Task.WhenAll(committableAggregates.Select(x =>
+            {
+                RemoveTrackedAggregate(x.Aggregate);
+                return _repository.Save(x.Aggregate, x.Version);
+            }));
+            _trackedAggregates.Clear();
         }
 
         private void RemoveTrackedAggregate(AggregateRoot aggregate)

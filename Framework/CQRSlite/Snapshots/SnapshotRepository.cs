@@ -23,9 +23,9 @@ namespace CQRSlite.Snapshots
             _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
         }
 
-        public Task Save<T>(T aggregate, Action<T> onAggregateSaved, int? exectedVersion = null) where T : AggregateRoot
+        public Task Save<T>(T aggregate, int? exectedVersion = null) where T : AggregateRoot
         {
-            return Task.WhenAll(TryMakeSnapshot(aggregate), _repository.Save(aggregate, onAggregateSaved, exectedVersion));
+            return Task.WhenAll(TryMakeSnapshot(aggregate), _repository.Save(aggregate, exectedVersion));
         }
 
         public async Task<T> Get<T>(Guid aggregateId) where T : AggregateRoot
