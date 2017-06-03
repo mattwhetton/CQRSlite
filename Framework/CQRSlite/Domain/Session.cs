@@ -37,7 +37,7 @@ namespace CQRSlite.Domain
                 var trackedAggregate = (T)_trackedAggregates[id].Aggregate;
                 if (expectedVersion != null && trackedAggregate.Version != expectedVersion)
                 {
-                    throw new ConcurrencyException(trackedAggregate.Id);
+                    throw new ConcurrencyException(trackedAggregate.Id, expectedVersion);
                 }
                 return trackedAggregate;
             }
@@ -45,7 +45,7 @@ namespace CQRSlite.Domain
             var aggregate = await _repository.Get<T>(id);
             if (expectedVersion != null && aggregate.Version != expectedVersion)
             {
-                throw new ConcurrencyException(id);
+                throw new ConcurrencyException(id, expectedVersion);
             }
             await Add(aggregate);
 
@@ -59,8 +59,16 @@ namespace CQRSlite.Domain
 
         public async Task Commit()
         {
-            await Task.WhenAll(_trackedAggregates.Values.Select(x => _repository.Save(x.Aggregate, x.Version)));
-            _trackedAggregates.Clear();
+            await Task.WhenAll(_trackedAggregates.Values.Select(x => _repository.Save(x.Aggregate, agg => RemoveTrackedAggregate(agg), x.Version)));
+            //_trackedAggregates.Clear();
+        }
+
+        private void RemoveTrackedAggregate(AggregateRoot aggregate)
+        {
+            lock(_trackedAggregates)
+            {
+                _trackedAggregates.Remove(aggregate.Id);
+            }
         }
     }
 }

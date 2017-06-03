@@ -24,15 +24,17 @@ namespace CQRSlite.Domain
             _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
         }
 
-        public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
+        public async Task Save<T>(T aggregate, Action<T> onAggregateSaved, int? expectedVersion = null) where T : AggregateRoot
         {
             if (expectedVersion != null && (await _eventStore.Get(aggregate.Id, expectedVersion.Value)).Any())
             {
-                throw new ConcurrencyException(aggregate.Id);
+                throw new ConcurrencyException(aggregate.Id, expectedVersion.Value);
             }
 
             var changes = aggregate.FlushUncommitedChanges();
             await _eventStore.Save(changes);
+
+            onAggregateSaved?.Invoke(aggregate);
 
             if (_publisher != null)
             {
