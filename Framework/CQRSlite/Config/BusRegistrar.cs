@@ -18,13 +18,12 @@ namespace CQRSlite.Config
             _serviceLocator = serviceLocator ?? throw new ArgumentNullException(nameof(serviceLocator));
         }
 
-        public void Register(params Type[] typesFromAssemblyContainingMessages)
+        public void Register(params Assembly[] assemblies)
         {
             var registrar = _serviceLocator.GetService<IHandlerRegistrar>();
 
-            foreach (var typesFromAssemblyContainingMessage in typesFromAssemblyContainingMessages)
+            foreach (var executorsAssembly in assemblies)
             {
-                var executorsAssembly = typesFromAssemblyContainingMessage.GetTypeInfo().Assembly;
                 var executorTypes = executorsAssembly
                     .GetTypes()
                     .Select(t => new { Type = t, Interfaces = ResolveMessageHandlerInterface(t) })
@@ -38,6 +37,10 @@ namespace CQRSlite.Config
                     }
                 }
             }
+        }
+        public void Register(params Type[] typesFromAssemblyContainingMessages)
+        {
+            Register(typesFromAssemblyContainingMessages.Select(t => t.GetTypeInfo().Assembly).ToArray());
         }
 
         private void InvokeHandler(Type @interface, IHandlerRegistrar registrar, Type executorType)
